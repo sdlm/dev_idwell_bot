@@ -21,7 +21,7 @@ def echo_server_status(bot, server: dict, status: bool):
 def get_server_status(url):
     for _ in range(10):
         try:
-            r = requests.get(f'http://{url}/api/system/init/')
+            r = requests.get(f'http://{url}/api/system/system-status/')
         except requests.exceptions.ConnectionError:
             return False
         else:
