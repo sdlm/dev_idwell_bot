@@ -1,3 +1,5 @@
+import traceback
+
 import requests
 from telegram.ext import Updater
 
@@ -31,29 +33,33 @@ def get_server_status(url):
 
 
 def callback_minute(bot, job):
-    for server in servers:
-        print('{alias}: {status}'.format(alias=server['alias'], status=server['status']))
-        is_server_alive = get_server_status(server['url'])
-        if server['status'] is None:
-            server['status'] = 0.5 if is_server_alive else -0.5
-            continue
-        status = float(server['status'])
-        if is_server_alive:
-            if status == -1:
-                server['status'] = -0.5
-            elif status == -0.5:
-                echo_server_status(bot, server, is_server_alive)
-                server['status'] = 1
+    try:
+        for server in servers:
+            print('{alias}: {status}'.format(alias=server['alias'], status=server['status']))
+            is_server_alive = get_server_status(server['url'])
+            if server['status'] is None:
+                server['status'] = 0.5 if is_server_alive else -0.5
+                continue
+            status = float(server['status'])
+            if is_server_alive:
+                if status == -1:
+                    server['status'] = -0.5
+                elif status == -0.5:
+                    echo_server_status(bot, server, is_server_alive)
+                    server['status'] = 1
+                else:
+                    server['status'] = 1
             else:
-                server['status'] = 1
-        else:
-            if status == 1:
-                server['status'] = 0.5
-            elif status == 0.5:
-                echo_server_status(bot, server, is_server_alive)
-                server['status'] = -1
-            else:
-                server['status'] = -1
+                if status == 1:
+                    server['status'] = 0.5
+                elif status == 0.5:
+                    echo_server_status(bot, server, is_server_alive)
+                    server['status'] = -1
+                else:
+                    server['status'] = -1
+    except:
+        with open('/tmp/bot.log', 'w') as file:
+            traceback.print_exc(file=file)
 
 
 if __name__ == '__main__':
