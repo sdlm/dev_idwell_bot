@@ -20,8 +20,8 @@ def echo_server_status(bot, server: dict, status: bool):
     bot.send_message(chat_id=CHAT_ID, text=text)
 
 
-def get_server_status(url):
-    for _ in range(10):
+def get_server_status(url, tryes=10):
+    for _ in range(tryes):
         try:
             r = requests.get(f'http://{url}/api/system/system-status/', timeout=2)
         except:
@@ -36,7 +36,8 @@ def callback_minute(bot, job):
     try:
         for server in servers:
             print('{alias}: {status}'.format(alias=server['alias'], status=server['status']))
-            is_server_alive = get_server_status(server['url'])
+            tryes = 10 if server['status'] is None or server['status'] != -1 else 1
+            is_server_alive = get_server_status(server['url'], tryes=tryes)
             if server['status'] is None:
                 server['status'] = 0.5 if is_server_alive else -0.5
                 continue
