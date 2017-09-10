@@ -23,8 +23,8 @@ def echo_server_status(bot, server: dict, status: bool):
 def get_server_status(url):
     for _ in range(10):
         try:
-            r = requests.get(f'http://{url}/api/system/system-status/')
-        except requests.exceptions.ConnectionError:
+            r = requests.get(f'http://{url}/api/system/system-status/', timeout=2)
+        except:
             continue
         else:
             if r.status_code == requests.codes.ok:
