@@ -20,9 +20,13 @@ def echo_server_status(bot, server: dict, status: bool):
 
 def get_server_status(url):
     for _ in range(10):
-        r = requests.get(f'http://{url}/api/system/init/')
-        if r.status_code == requests.codes.ok:
-            return True
+        try:
+            r = requests.get(f'http://{url}/api/system/init/')
+        except requests.exceptions.ConnectionError:
+            return False
+        else:
+            if r.status_code == requests.codes.ok:
+                return True
     return False
 
 
