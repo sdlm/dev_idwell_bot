@@ -23,7 +23,7 @@ def echo_server_status(bot, server: dict, status: bool):
 def get_server_status(url, tryes=10):
     for _ in range(tryes):
         try:
-            r = requests.get(f'http://{url}/api/system/system-status/', timeout=2)
+            r = requests.get(f'http://{url}/api/system/system-status/?telegram_bot=1', timeout=2)
         except:
             continue
         else:
