@@ -23,7 +23,7 @@ def get_server_status(url):
         try:
             r = requests.get(f'http://{url}/api/system/system-status/')
         except requests.exceptions.ConnectionError:
-            return False
+            continue
         else:
             if r.status_code == requests.codes.ok:
                 return True
