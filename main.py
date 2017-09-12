@@ -2,11 +2,20 @@ import traceback
 from time import sleep
 
 import requests
-from telegram.ext import Updater
+from pony.orm import commit, db_session
+from telegram.ext import Updater, CommandHandler
+
+from commands import follow, forget
+from models import Server
 
 TOKEN = '383519781:AAFBKloOU50Ofst3B1f7XKX24oEbRekujgc'
 CHANNEL_ID = '-1001129781142'
 TIMEOUT = 15.0
+DEFAULT_SERVERS = {
+    'dev': 'dev.idwell.ru',
+    'qa': 'qa.idwell.ru',
+    'live': 'blackfriday.idwell.at',
+}
 
 servers = [
     {'alias': 'dev', 'url': 'dev.idwell.ru', 'prev_state': None},
@@ -35,7 +44,7 @@ def get_server_status(url, tries=10):
     return False
 
 
-def callback_minute(bot, job):
+def callback_minute(bot, *_):
     try:
         for server in servers:
             print('{alias}: {status}'.format(alias=server['alias'], status=server['status']))
@@ -53,7 +62,35 @@ def callback_minute(bot, job):
 
 
 if __name__ == '__main__':
+
+    print('main: init db')
+    # init db
+    with db_session:
+        for alias, url in DEFAULT_SERVERS.items():
+            obj = Server.get(alias=alias)
+            if obj is None:
+                Server(alias=alias, url=url)
+        commit()
+
+    print('main: init bot')
+    # init bot
     updater = Updater(token=TOKEN)
     j = updater.job_queue
+    dispatcher = updater.dispatcher
+
+    print('main: regular send messages')
+    # regular send messages to channel dev_idwell_ru
     j.run_repeating(callback_minute, TIMEOUT, first=0.0, context=None, name='test')
+
+    print('main: define commands')
+    # define commands
+    commands = {
+        'follow': follow,
+        'forget': forget
+    }
+    for name, func in commands.items():
+        handler = CommandHandler(name, func, pass_args=True)
+        dispatcher.add_handler(handler)
+
+    print('main: start_polling')
     updater.start_polling()
