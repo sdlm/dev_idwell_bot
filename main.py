@@ -2,11 +2,11 @@ import traceback
 from time import sleep
 
 import requests
-from pony.orm import commit, db_session
+from pony.orm import commit, db_session, select
 from telegram.ext import Updater, CommandHandler
 
 from commands import follow, forget
-from models import Server
+from models import Server, User
 
 TOKEN = '383519781:AAFBKloOU50Ofst3B1f7XKX24oEbRekujgc'
 CHANNEL_ID = '-1001129781142'
@@ -25,17 +25,24 @@ servers = [
 
 
 def echo_server_status(bot, server: dict, status: bool):
-    alias = server['alias']
+    _alias = server['alias']
     status_word = 'up' if status else 'down'
-    text = f'{alias} is {status_word} right now'
+    text = f'{_alias} is {status_word} right now'
+
+    # send to channel
     bot.send_message(chat_id=CHANNEL_ID, text=text)
+
+    # send to followers
+    with db_session:
+        for user in Server.get(alias=_alias).users:
+            bot.send_message(chat_id=user.chat_id, text=text)
 
 
 def get_server_status(url, tries=10):
     for _ in range(tries):
         try:
             r = requests.get(f'http://{url}/api/system/get_status/?telegram_bot=1', timeout=2)
-        except:
+        except Exception:
             sleep(1)
             continue
         else:
@@ -56,7 +63,7 @@ def callback_minute(bot, *_):
             if is_server_alive != server['prev_state']:
                 echo_server_status(bot, server, is_server_alive)
             server['prev_state'] = is_server_alive
-    except:
+    except Exception:
         with open('/tmp/bot.log', 'w') as file:
             traceback.print_exc(file=file)
 
