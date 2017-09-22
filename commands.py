@@ -10,10 +10,11 @@ class ValidationError(Exception):
     pass
 
 
-def get_server(**kwargs):
+def get_server(is_follow=True, **kwargs):
     # get alias
     server_alias = kwargs['args'][0] if 'args' in kwargs and len(kwargs['args']) > 0 else None
     if not server_alias:
+        cmd = 'follow' if is_follow else 'forget'
         raise ValidationError('correct syntax is "/follow {server_alias}"')
 
     # validate alias
@@ -27,9 +28,9 @@ def get_server(**kwargs):
     return server_obj.id
 
 
-def follow(bot, update, *_, **kwargs):
+def update_followed_list(bot, update, is_follow=True, *_, **kwargs):
     try:
-        server_obj_id = get_server(**kwargs)
+        server_obj_id = get_server(is_follow=is_follow, **kwargs)
 
         with db_session:
             server_obj = Server.get(id=server_obj_id)
@@ -47,18 +48,28 @@ def follow(bot, update, *_, **kwargs):
                     created=now,
                     last_msg=now,
                 )
-                new_user.servers.add(server_obj)
-                print('user created')
+                if is_follow:
+                    new_user.servers.add(server_obj)
+                    print('user created')
+                else:
+                    print('you already not follow to this server')
             else:
-                user.servers.add(server_obj)
+                if is_follow:
+                    user.servers.add(server_obj)
+                    print(f'you will receive messages about {server_obj.alias} server')
+                else:
+                    user.servers.remove(server_obj)
+                    print(f'you will not receive messages about {server_obj.alias} server')
             commit()
             user_servers_str = ', '.join([s.alias for s in user.servers]) if user is not None else ''
 
+        cmd = 'follow' if is_follow else 'forget'
+
         # send message
-        msg = f'{user_name}({user_id}) follow {server_obj.alias}'
+        msg = f'{user_name}({user_id}) {cmd} {server_obj.alias}'
         bot.send_message(chat_id=update.message.chat_id, text=msg)
 
-        msg = 'now you follow to: {servers}'.format(servers=user_servers_str)
+        msg = f'now you follow to: {user_servers_str}'
         bot.send_message(chat_id=update.message.chat_id, text=msg)
 
     except ValidationError as e:
@@ -66,44 +77,18 @@ def follow(bot, update, *_, **kwargs):
 
     except:
         traceback.print_exc()
+
+
+def follow(bot, update, *_, **kwargs):
+    update_followed_list(bot, update, is_follow=True, **kwargs)
 
 
 def forget(bot, update, *_, **kwargs):
-    try:
-        server_obj_id = get_server(**kwargs)
+    update_followed_list(bot, update, is_follow=False, **kwargs)
 
-        with db_session:
-            server_obj = Server.get(id=server_obj_id)
 
-            # save user
-            user_name = update.message.from_user.first_name
-            user_id = update.message.from_user.id
-            now = datetime.datetime.now()
-            user = User.get(chat_id=user_id)
-            if user is None:
-                User(
-                    name=user_name,
-                    chat_id=user_id,
-                    active=False,
-                    created=now,
-                    last_msg=now,
-                )
-                print('user created')
-            else:
-                user.servers.remove(server_obj)
-            commit()
-
-            user_servers_str = ', '.join([s.alias for s in user.servers]) if user is not None else ''
-
-        # send message
-        msg = f'{user_name}({user_id}) forget {server_obj.alias}'
-        bot.send_message(chat_id=update.message.chat_id, text=msg)
-
-        msg = 'now you follow to: {servers}'.format(servers=user_servers_str)
-        bot.send_message(chat_id=update.message.chat_id, text=msg)
-
-    except ValidationError as e:
-        bot.send_message(chat_id=update.message.chat_id, text=str(e))
-
-    except:
-        traceback.print_exc()
+def start(bot, update, **_):
+    msg = '''commands:
+/follow {server_alias} - receive messages about server status 
+/forget {server_alias} - don\'t receive messages about server status'''
+    bot.send_message(chat_id=update.message.chat_id, text=msg)
