@@ -15,12 +15,17 @@ def get_server(is_follow=True, **kwargs):
     server_alias = kwargs['args'][0] if 'args' in kwargs and len(kwargs['args']) > 0 else None
     if not server_alias:
         cmd = 'follow' if is_follow else 'forget'
-        raise ValidationError('correct syntax is "/follow {server_alias}"')
+        with db_session:
+            aliases = [s.alias for s in Server.select()]
+        msg = f'correct syntax is "/{cmd} {{server_alias}}"\n' \
+              f'where server_alias is one of {aliases}'
+        raise ValidationError(msg)
 
     # validate alias
     with db_session:
         server_obj = Server.get(alias=server_alias)
         if server_obj is None:
+            # noinspection PyTypeChecker
             server_aliases = [obj.alias for obj in select(s for s in Server)]
             msg = 'choice server_alias from: {}'.format(', '.join(server_aliases))
             raise ValidationError(msg)
@@ -75,7 +80,7 @@ def update_followed_list(bot, update, is_follow=True, *_, **kwargs):
     except ValidationError as e:
         bot.send_message(chat_id=update.message.chat_id, text=str(e))
 
-    except:
+    except Exception:
         traceback.print_exc()
 
 
@@ -90,5 +95,5 @@ def forget(bot, update, *_, **kwargs):
 def start(bot, update, **_):
     msg = '''commands:
 /follow {server_alias} - receive messages about server status 
-/forget {server_alias} - don\'t receive messages about server status'''
+/forget {server_alias} - suppress messages about server status'''
     bot.send_message(chat_id=update.message.chat_id, text=msg)
