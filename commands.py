@@ -93,7 +93,10 @@ def forget(bot, update, *_, **kwargs):
 
 
 def start(bot, update, **_):
-    msg = '''commands:
-/follow {server_alias} - receive messages about server status 
-/forget {server_alias} - suppress messages about server status'''
+    with db_session:
+        aliases = [s.alias for s in Server.select()]
+    msg = f'commands: ' \
+          f'/follow {{server_alias}} - receive messages about server status' \
+          f'/forget {{server_alias}} - suppress messages about server status' \
+          f'where server_alias is one of {aliases}'
     bot.send_message(chat_id=update.message.chat_id, text=msg)
