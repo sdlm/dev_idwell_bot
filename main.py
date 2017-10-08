@@ -5,7 +5,7 @@ import requests
 from pony.orm import commit, db_session
 from telegram.ext import Updater, CommandHandler
 
-from commands import follow, forget, start
+from commands import follow, forget, start, build
 from models import Server
 
 TOKEN = '383519781:AAFBKloOU50Ofst3B1f7XKX24oEbRekujgc'
@@ -96,7 +96,8 @@ if __name__ == '__main__':
     commands = {
         'follow': follow,
         'forget': forget,
-        'start': start
+        'start': start,
+        'build': build
     }
     for name, func in commands.items():
         handler = CommandHandler(name, func, pass_args=True)

@@ -1,3 +1,5 @@
 pony
 python-telegram-bot
 requests
+# bamboo_api
+pytest
