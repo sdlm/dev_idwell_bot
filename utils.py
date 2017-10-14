@@ -3,6 +3,7 @@ import traceback
 from time import sleep
 
 from pony.orm import db_session, select, commit
+from telegram.error import BadRequest
 
 from bamboo_api import BambooAPIClient
 from models import Server, User
@@ -48,7 +49,7 @@ def update_followed_list(bot, update, is_follow=True, *_, **kwargs):
             now = datetime.datetime.now()
             user = User.get(chat_id=user_id)
             if user is None:
-                new_user = User(
+                user = User(
                     name=user_name,
                     chat_id=user_id,
                     active=False,
@@ -56,31 +57,33 @@ def update_followed_list(bot, update, is_follow=True, *_, **kwargs):
                     last_msg=now,
                 )
                 if is_follow:
-                    new_user.servers.add(server_obj)
-                    print('user created')
-                else:
-                    print('you already not follow to this server')
+                    user.servers.add(server_obj)
             else:
                 if is_follow:
                     user.servers.add(server_obj)
-                    print(f'you will receive messages about {server_obj.alias} server')
                 else:
                     user.servers.remove(server_obj)
-                    print(f'you will not receive messages about {server_obj.alias} server')
             commit()
-            user_servers_str = ', '.join([s.alias for s in user.servers]) if user is not None else ''
+            # user_servers_str = ', '.join([s.alias for s in user.servers]) if user is not None else ''
 
-        cmd = 'follow' if is_follow else 'forget'
+        cmd = 'will' if is_follow else 'will not'
 
         # send message
-        msg = f'{user_name}({user_id}) {cmd} {server_obj.alias}'
-        bot.send_message(chat_id=update.message.chat_id, text=msg)
+        msg = f'you {cmd} receive messages about {server_obj.alias} server status'
+        try:
+            bot.send_message(chat_id=update.message.chat_id, text=msg)
+        except BadRequest:
+            traceback.print_exc()
 
-        msg = f'now you follow to: {user_servers_str}'
-        bot.send_message(chat_id=update.message.chat_id, text=msg)
+        # send status message
+        # msg = f'you do\'t follow any servers' if user_servers_str == '' else f'now you follow to: {user_servers_str}'
+        # bot.send_message(chat_id=update.message.chat_id, text=msg)
 
     except ValidationError as e:
-        bot.send_message(chat_id=update.message.chat_id, text=str(e))
+        try:
+            bot.send_message(chat_id=update.message.chat_id, text=str(e))
+        except BadRequest:
+            traceback.print_exc()
 
     except Exception:
         traceback.print_exc()

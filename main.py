@@ -3,13 +3,14 @@ from time import sleep
 
 import requests
 from pony.orm import commit, db_session
+from telegram.error import BadRequest
 from telegram.ext import Updater, CommandHandler
 
-from commands import follow, forget, start, build
+from commands import follow, forget, start, build, status
 from models import Server
 
 TOKEN = '383519781:AAFBKloOU50Ofst3B1f7XKX24oEbRekujgc'
-CHANNEL_ID = '-1001129781142'
+DEV_CHAT_ID = '-142032518'
 TIMEOUT = 15.0
 DEFAULT_SERVERS = {
     'dev': 'dev.idwell.ru',
@@ -29,15 +30,21 @@ def echo_server_status(bot, server: dict, status: bool):
     status_word = 'up' if status else 'down'
     text = f'{_alias} is {status_word} right now'
 
-    # send to channel
-    print(f'send to channel: {text}')
-    bot.send_message(chat_id=CHANNEL_ID, text=text)
+    # send to dev chat
+    if _alias == 'dev':
+        try:
+            bot.send_message(chat_id=DEV_CHAT_ID, text=text)
+        except BadRequest:
+            traceback.print_exc()
 
     # send to followers
     with db_session:
         for user in Server.get(alias=_alias).users:
             print(f'send to {user.name}: {text}')
-            bot.send_message(chat_id=user.chat_id, text=text)
+            try:
+                bot.send_message(chat_id=user.chat_id, text=text)
+            except BadRequest:
+                traceback.print_exc()
 
 
 def get_server_status(url, tries=10):
@@ -96,6 +103,7 @@ if __name__ == '__main__':
     commands = {
         'follow': follow,
         'forget': forget,
+        'status': status,
         'start': start,
         'build': build
     }
