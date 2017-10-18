@@ -3,7 +3,7 @@ import traceback
 from time import sleep
 
 from pony.orm import db_session, select, commit
-from telegram.error import BadRequest
+from telegram.error import BadRequest, Unauthorized
 
 from bamboo_api import BambooAPIClient
 from models import Server, User
@@ -72,7 +72,7 @@ def update_followed_list(bot, update, is_follow=True, *_, **kwargs):
         msg = f'you {cmd} receive messages about {server_obj.alias} server status'
         try:
             bot.send_message(chat_id=update.message.chat_id, text=msg)
-        except BadRequest:
+        except (BadRequest, Unauthorized):
             traceback.print_exc()
 
         # send status message
@@ -82,7 +82,7 @@ def update_followed_list(bot, update, is_follow=True, *_, **kwargs):
     except ValidationError as e:
         try:
             bot.send_message(chat_id=update.message.chat_id, text=str(e))
-        except BadRequest:
+        except (BadRequest, Unauthorized):
             traceback.print_exc()
 
     except Exception:

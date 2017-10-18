@@ -3,7 +3,7 @@ from time import sleep
 
 import requests
 from pony.orm import commit, db_session
-from telegram.error import BadRequest
+from telegram.error import BadRequest, Unauthorized
 from telegram.ext import Updater, CommandHandler
 
 from commands import follow, forget, start, build, status
@@ -34,7 +34,7 @@ def echo_server_status(bot, server: dict, status: bool):
     if _alias == 'dev':
         try:
             bot.send_message(chat_id=DEV_CHAT_ID, text=text)
-        except BadRequest:
+        except (BadRequest, Unauthorized):
             traceback.print_exc()
 
     # send to followers
@@ -43,7 +43,7 @@ def echo_server_status(bot, server: dict, status: bool):
             print(f'send to {user.name}: {text}')
             try:
                 bot.send_message(chat_id=user.chat_id, text=text)
-            except BadRequest:
+            except (BadRequest, Unauthorized):
                 traceback.print_exc()
 
 
