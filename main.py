@@ -31,11 +31,11 @@ def echo_server_status(bot, server: dict, status: bool):
     text = f'{_alias} is {status_word} right now'
 
     # send to dev chat
-    if _alias == 'dev':
-        try:
-            bot.send_message(chat_id=DEV_CHAT_ID, text=text)
-        except (BadRequest, Unauthorized):
-            traceback.print_exc()
+    # if _alias == 'dev':
+    #     try:
+    #         bot.send_message(chat_id=DEV_CHAT_ID, text=text)
+    #     except (BadRequest, Unauthorized):
+    #         traceback.print_exc()
 
     # send to followers
     with db_session:
