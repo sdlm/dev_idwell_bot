@@ -50,7 +50,7 @@ def echo_server_status(bot, server: dict, status: bool):
 def get_server_status(url, tries=10):
     for _ in range(tries):
         try:
-            r = requests.get(f'http://{url}/api/system/get_status/?telegram_bot=1', timeout=2)
+            r = requests.get(f'https://{url}/api/system/get_status/?telegram_bot=1', timeout=2)
         except Exception:
             sleep(1)
             continue
