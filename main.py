@@ -19,8 +19,8 @@ DEFAULT_SERVERS = {
 }
 
 servers = [
-    {'alias': 'dev', 'url': 'dev.idwell.ru', 'prev_state': None},
-    {'alias': 'qa', 'url': 'qa.idwell.ru', 'prev_state': None},
+    {'alias': 'dev', 'url': 'dev.dev.idwell.ru', 'prev_state': None},
+    {'alias': 'qa', 'url': 'qa.qa.idwell.ru', 'prev_state': None},
     {'alias': 'live', 'url': 'blackfriday.idwell.at', 'prev_state': None},
 ]
 
